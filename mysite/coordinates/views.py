@@ -33,7 +33,7 @@ def is_float_formatable(value):
     except (ValueError, TypeError):
         return False
 
-key = 'YourGoogleAPI'
+key = 'GoogleAPIKey'
 url = 'https://places.googleapis.com/v1/places:searchNearby'
 client = googlemaps.Client(key)
 n_ret = 1
@@ -64,15 +64,18 @@ def index(request):
     )
 
     results = r.get("results")
-    final = []
-    
-    for i in range(n_ret):
-        result = results[i]
-        name = result.get("name")
-        location = result.get("geometry").get("location")
 
-        final.append({"name": name, "location": location})
-    
-    final = {"results": final}
+    if n_ret == 1:
+        return JsonResponse({"results": [{results[0].get("name"): results[0].get("geometry").get("location")}]})
+    else:
+        final = []
+        for i in range(n_ret):
+            result = results[i]
+            name = result.get("name")
+            location = result.get("geometry").get("location")
+
+            final.append({"name": name, "location": location})
+
+        final = {"results": final}
 
     return JsonResponse(final)
