@@ -33,7 +33,7 @@ def is_float_formatable(value):
     except (ValueError, TypeError):
         return False
 
-key = 'GoogleAPIKey'
+key = 'YourGoogleAPI'
 url = 'https://places.googleapis.com/v1/places:searchNearby'
 client = googlemaps.Client(key)
 n_ret = 1
@@ -42,40 +42,33 @@ query = ["caffe", "cafe", "coffee"]
 language = "en"
 
 # Create your views here.
-def index(request): 
-    
-    json_data = json.loads(request.body)
-    lat = json_data.get("lat")
-    lng = json_data.get("lng")
-        
-    if lat is None or lng is None or not is_float_formatable(lat) or not is_float_formatable(lng):
-        return JsonResponse({"error": "lat or lng is either None or not a float"})
-    
-    if not valid_lonlat(float(lng), float(lat)):
-        return JsonResponse({"error": "Coordinates not valid"})
-    
-    location = (lat, lng)
-    r = client.places_nearby(
-        location=location,
-        keyword=query,
-        language=language,
-        open_now=True,
-        rank_by="distance"
-    )
+def index(request):
+    if request.method == "POST":
+        json_data = json.loads(request.body)
+        print(json_data)
+        lat = json_data.get("lat")
+        lng = json_data.get("lng")
 
-    results = r.get("results")
+        if lat is None or lng is None or not is_float_formatable(lat) or not is_float_formatable(lng):
+            return JsonResponse({"error": "lat or lng is either None or not a float"})
 
-    if n_ret == 1:
-        return JsonResponse({"results": [{results[0].get("name"): results[0].get("geometry").get("location")}]})
+        if not valid_lonlat(float(lng), float(lat)):
+            return JsonResponse({"error": "Coordinates not valid"})
+
+        location = (lat, lng)
+        r = client.places_nearby(
+            location=location,
+            keyword=query,
+            language=language,
+            open_now=False,
+            rank_by="distance"
+        )
+
+        results = r.get("results")
+        name = results[0].get("name")
+        lat = results[0].get("geometry").get("location").get("lat")
+        lng = results[0].get("geometry").get("location").get("lng")
+
+        return JsonResponse({"name": name, "lat": lat, "lng": lng})
     else:
-        final = []
-        for i in range(n_ret):
-            result = results[i]
-            name = result.get("name")
-            location = result.get("geometry").get("location")
-
-            final.append({"name": name, "location": location})
-
-        final = {"results": final}
-
-    return JsonResponse(final)
+        return JsonResponse({"error": "not valid"})
